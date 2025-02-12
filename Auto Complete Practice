@@ -1,0 +1,90 @@
+// ==UserScript==
+// @name         Edgenuity Auto-Complete, Frame Modifier, and Clickable Frames
+// @namespace    http://tampermonkey.net/
+// @version      0.4
+// @description  Automatically completes the progress bar, matches the timer ratios, modifies frames, and makes frames clickable.
+// @author       You
+// @match        https://r10.core.learn.edgenuity.com/player/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    // Function to simulate progress bar completion and update timer
+    function completeProgressBarAndTimer() {
+        const controls = document.querySelector('ul.controls');
+        if (!controls) return;
+
+        const progressBar = controls.querySelector('#uid1_progressContainer');
+        const timer = controls.querySelector('#uid1_time');
+
+        if (progressBar && timer) {
+            // Simulate progress bar reaching the end
+            const progressWidth = window.getComputedStyle(progressBar)['width'];
+            const progressContainer = progressBar.querySelector('.progress-bar');
+            if (progressContainer) {
+                progressContainer.style.width = progressWidth;
+            }
+
+            // Update timer to match the end time
+            const timerText = timer.textContent;
+            const parts = timerText.split(' / ');
+            if (parts.length === 2) {
+                timer.textContent = `${parts[1]} / ${parts[1]}`;
+            }
+        }
+    }
+
+    // Function to add FrameCurrent and FrameComplete classes to frames
+    function modifyFrames() {
+        const frames = document.querySelectorAll('ol.FramesList > li');
+        if (!frames.length) return;
+        for (let i = 1; i < frames.length - 1; i++) {
+            const frame = frames[i];
+            if (!frame.classList.contains('FrameComplete')) {
+                frame.classList.add('FrameComplete');
+            }
+            if (!frame.classList.contains('FrameCurrent')) {
+                frame.classList.add('FrameCurrent');
+            }
+        }
+    }
+
+    // Function to make frames clickable
+    function makeFramesClickable() {
+        const frames = document.querySelectorAll('ol.FramesList > li');
+        if (!frames.length) return;
+        for (let i = 1; i < frames.length - 1; i++) {
+            const frame = frames[i];
+            frame.style.cursor = 'pointer';
+            frame.addEventListener('click', () => {
+                console.log(`Clicked on frame: ${frame.id}`);
+                // Here you would add the logic to navigate to the frame
+            });
+        }
+    }
+
+    // Function to check if the elements are present and run the scripts
+    function checkAndRun() {
+        if (document.querySelector('ul.controls') && document.querySelector('#uid1_progressContainer') && document.querySelector('#uid1_time')) {
+            completeProgressBarAndTimer();
+        }
+        if (document.querySelector('ol.FramesList')) {
+            modifyFrames();
+            makeFramesClickable();
+        }
+        if (document.querySelector('ul.controls') || document.querySelector('ol.FramesList')) {
+            observer.disconnect();
+        }
+    }
+
+    // Create a MutationObserver to watch for changes in the DOM
+    const observer = new MutationObserver(checkAndRun);
+
+    // Start observing the document body for changes
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Check if the elements are already present on load
+    checkAndRun();
+})();
